@@ -21,5 +21,5 @@ for _ in range(int(input())):
     date_obj2, zone2 = date_format(date2)
     date_diff = int((date_obj1 - date_obj2).total_seconds())
     zone_diff = utc_diff(zone1) - utc_diff(zone2)
-    arr.append(abs(date_diff) + abs(zone_diff))
+    arr.append(abs(date_diff) - abs(zone_diff))
 print(arr)
