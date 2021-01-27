@@ -8,8 +8,10 @@
 In a terminal session from the file directory run:
 
 ```bash
-python main.py
+python Seconds_between.py
 ```
+Enter number of Scenarios
+
 Enter date1
 
 Enter date2
