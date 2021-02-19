@@ -21,7 +21,7 @@ A link with port number will appear on the terminal
 
 Eg: http://127.0.0.1:5000/
 
-Paste this url in the browser and add your dates at the end in the following format:
+Paste this url in the browser and add your dates at the end in the following format(remember to replace whitespaces in your dates with underscores("_")):
 ```
 url_of_the_sever:port//seconds_btwn?date1=<YOURDATE1>&date2=<YOURDATE2>
 ```

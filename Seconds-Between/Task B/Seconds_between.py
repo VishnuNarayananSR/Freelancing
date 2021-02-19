@@ -16,10 +16,8 @@ def date_format(date):
 
 def seconds_between(date1, date2):
     arr = []
-    # date1,date2 = data.split("~")
     date1 = date1.replace("_"," ")
     date2 = date2.replace("_"," ")
-    print(date1, date2)
     date_obj1, zone1 = date_format(date1)
     date_obj2, zone2 = date_format(date2)
     date_diff = int((date_obj1 - date_obj2).total_seconds())
