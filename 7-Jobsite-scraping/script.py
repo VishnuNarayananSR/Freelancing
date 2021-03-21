@@ -44,15 +44,15 @@ def filters():
     0. All
 """))
     salary = int(input(""" Salary:
-    1. at least £10,000 
-    2. at least £20,000 
-    3. at least £30,000 
-    4. at least £40,000 
-    5. at least £50,000 
-    6. at least £60,000 
-    7. at least £70,000 
-    8. at least £80,000 
-    9. at least £90,000 
+    1. at least £10,000
+    2. at least £20,000
+    3. at least £30,000
+    4. at least £40,000
+    5. at least £50,000
+    6. at least £60,000
+    7. at least £70,000
+    8. at least £80,000
+    9. at least £90,000
     10. at least £100,000
     0. All
     """))
@@ -64,7 +64,7 @@ def filters():
 
 
 def open_browser(driver, url):
-    driver.get(url) 
+    driver.get(url)
     return driver
 
 
@@ -88,7 +88,7 @@ def write_xl(df,filename, sheet):
 
 # soup = None
 
-def efc(driver, JOBTITLE, LOCATION): 
+def efc(driver, JOBTITLE, LOCATION):
 
     def get_efc_descr(link):
         soup = prepare_soup(link)
@@ -107,7 +107,7 @@ def efc(driver, JOBTITLE, LOCATION):
     else: sal = "THIRD_TIER|FOURTH_TIER|FIFTH_TIER|SIXTH"
     url = f'https://www.efinancialcareers.com/search/?q={JOBTITLE}&location={LOCATION}&page=1&pageSize=3&filters.postedDate={age_dict[age_fltr]}&filters.positionType={type_dict[jt_fltr]}&filters.salaryBand={sal}_TIER'
     print('fetching from site:', url)
-    if age_fltr == 0: 
+    if age_fltr == 0:
         url = url.replace('&filters.postedDate=','')
     driver = open_browser(driver, url)
     try:
@@ -122,7 +122,7 @@ def efc(driver, JOBTITLE, LOCATION):
             # global soup
             soup = BeautifulSoup(html, "html.parser")
             for job in soup.findAll('div', 'search-card'):
-                if count >= N: 
+                if count >= N:
                     break
                 count += 1
 
@@ -165,13 +165,18 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
     url = url_dict[site]
     print('fetching from site:', url)
     open_browser(driver, url)
+    try:
+        cookie = driver.find_element_by_class_name("privacy-prompt-button.primary-button.accept-button-new")
+        cookie.click()
+    except:
+        pass
     title_field = driver.find_element_by_id("keywords")
     title_field.send_keys(JOBTITLE)
     loc_field = driver.find_element_by_id("location")
     loc_field.send_keys(LOCATION)
     search_btn = driver.find_element_by_id("search-button")
     search_btn.click()
-    try: 
+    try:
         data = []
         count = 0
         next_btn = True
@@ -191,7 +196,7 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
             for job in soup.find_all('div', 'job'):
                 link_ct += 1
                 if not "ci-advert-job" in job['class']:
-                    if count >= N: 
+                    if count >= N:
                         break
                     count += 1
                     links = driver.find_elements_by_class_name('job-title')
@@ -205,7 +210,7 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
                         link = links[count].find_element_by_tag_name('a')
                         main_window = driver.current_window_handle
                         action = ActionChains(driver)
-        
+
                         action.key_down(Keys.CONTROL).key_down(Keys.SHIFT).click(link).key_up(Keys.CONTROL).key_up(Keys.SHIFT).perform()
 
                         driver.switch_to.window(driver.window_handles[-1])
@@ -248,18 +253,18 @@ def indeed(driver, JOBTITLE, LOCATION):
             return ''
         summary = soup.find(id='jobDescriptionText').text.strip()
         return summary
-    
+
     base_url = 'https://uk.indeed.com'
 
     type_list = ['','permanent','contract','temporary', 'parttime']
     age = {1:1,2:3,3:7,4:14,0:''}
     sal = sal_fltr*10000 if sal_fltr > 0 else ''
     url = f'https://uk.indeed.com/jobs?q={JOBTITLE}+£{sal}&l={LOCATION}&jt={type_list[jt_fltr]}&fromage={age[age_fltr]}'
-    if jt_fltr == 0: 
+    if jt_fltr == 0:
         url = url.replace('&jt=', '')
-    if age_fltr == 0: 
+    if age_fltr == 0:
         url = url.replace('&fromage=', '')
-    if sal_fltr == 0: 
+    if sal_fltr == 0:
         url = url.replace('+£','')
     print('fetching from site:', url)
     try:
@@ -277,7 +282,7 @@ def indeed(driver, JOBTITLE, LOCATION):
             link_ct = 0
             for job in soup.findAll('div', 'jobsearch-SerpJobCard'):
                 link_ct += 1
-                if count >= N: 
+                if count >= N:
                     break
                 count += 1
 
@@ -341,12 +346,17 @@ if __name__ == '__main__':
     writer = openpyxl.Workbook()
     writer.save(filename)
     title, location, age_fltr, jt_fltr, sal_fltr, N = filters()
-    driver = webdriver.Chrome(ChromeDriverManager().install())
-    # multi_site(driver, title, location, site="cw")
-    # multi_site(driver, title, location, site="total")
-    # multi_site(driver, title, location, site="jobsite")
-    # multi_site(driver, title, location, site="city")
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--disable-notifications")
+    chrome_options.add_argument("--disable-popup-blocking")
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    # driver = webdriver.Chrome(ChromeDriverManager().install())
+    multi_site(driver, title, location, site="cw")
+    multi_site(driver, title, location, site="total")
+    multi_site(driver, title, location, site="jobsite")
+    multi_site(driver, title, location, site="city")
     efc(driver, title, location)
-    # indeed(driver, title, location)
+    indeed(driver, title, location)
     # Thread(target = efc("web-dev", "london")).start()
     # Thread(target = multi_site("web-dev", "london")).start()
