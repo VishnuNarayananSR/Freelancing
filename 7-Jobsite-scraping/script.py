@@ -150,7 +150,7 @@ def efc(driver, JOBTITLE, LOCATION):
             except NoSuchElementException:
                 pass
             except Exception as e:
-                print(e)
+                # print(e)
                 break
     except TimeoutException:
         print('No search result found')
@@ -158,7 +158,7 @@ def efc(driver, JOBTITLE, LOCATION):
         print('An error occured:', e)
     finally:
         df = pd.DataFrame(data, columns=['Job Title', 'Salary', 'Location', 'Post Date', 'Type', 'Intro'])
-        write_xl(df, filename, 'efinancialcareeers')
+        write_xl(df, filename, 'efinancialcareers')
         # driver.close()
         print('done')
 
@@ -237,7 +237,8 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
                         driver.close()
                         driver.switch_to.window(main_window)
                     except Exception as e:
-                        print(e)
+                        pass
+                        # print(e)
             try:
                 link_ct = 0
                 next_btn = None
