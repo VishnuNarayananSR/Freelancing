@@ -1,3 +1,7 @@
+# from os import system
+
+# system('pip install -r requirements.txt')
+
 import datetime
 import requests
 import openpyxl
@@ -44,15 +48,15 @@ def filters():
     0. All
 """))
     salary = int(input(""" Salary:
-    1. at least £10,000
-    2. at least £20,000
-    3. at least £30,000
-    4. at least £40,000
-    5. at least £50,000
-    6. at least £60,000
-    7. at least £70,000
-    8. at least £80,000
-    9. at least £90,000
+    1. at least £10,000 
+    2. at least £20,000 
+    3. at least £30,000 
+    4. at least £40,000 
+    5. at least £50,000 
+    6. at least £60,000 
+    7. at least £70,000 
+    8. at least £80,000 
+    9. at least £90,000 
     10. at least £100,000
     0. All
     """))
@@ -64,7 +68,7 @@ def filters():
 
 
 def open_browser(driver, url):
-    driver.get(url)
+    driver.get(url) 
     return driver
 
 
@@ -88,7 +92,7 @@ def write_xl(df,filename, sheet):
 
 # soup = None
 
-def efc(driver, JOBTITLE, LOCATION):
+def efc(driver, JOBTITLE, LOCATION): 
 
     def get_efc_descr(link):
         soup = prepare_soup(link)
@@ -105,9 +109,9 @@ def efc(driver, JOBTITLE, LOCATION):
     if sal_fltr < 4: sal = 'FIRST'
     elif sal_fltr < 8: sal = 'SECOND'
     else: sal = "THIRD_TIER|FOURTH_TIER|FIFTH_TIER|SIXTH"
-    url = f'https://www.efinancialcareers.com/search/?q={JOBTITLE}&location={LOCATION}&page=1&pageSize=3&filters.postedDate={age_dict[age_fltr]}&filters.positionType={type_dict[jt_fltr]}&filters.salaryBand={sal}_TIER'
+    url = f'https://www.efinancialcareers.com/search/?q={JOBTITLE}&location={LOCATION}&page=1&pageSize=100&filters.postedDate={age_dict[age_fltr]}&filters.positionType={type_dict[jt_fltr]}&filters.salaryBand={sal}_TIER'
     print('fetching from site:', url)
-    if age_fltr == 0:
+    if age_fltr == 0: 
         url = url.replace('&filters.postedDate=','')
     driver = open_browser(driver, url)
     try:
@@ -122,12 +126,13 @@ def efc(driver, JOBTITLE, LOCATION):
             # global soup
             soup = BeautifulSoup(html, "html.parser")
             for job in soup.findAll('div', 'search-card'):
-                if count >= N:
+                if count >= N: 
                     break
                 count += 1
 
                 new_link = 'https://www.efinancialcareers.com/' + job.find_all('a',{'class':'card-title-link bold'})[0].attrs['href']
                 summary = get_efc_descr(new_link)
+                # summary = 'test'
 
                 data.append([job.a.text.strip(),
                 job.find('div', 'card-salary ng-star-inserted').text.strip(),
@@ -139,10 +144,14 @@ def efc(driver, JOBTITLE, LOCATION):
                 ])
             try:
                 next_btn = None
-                next_btn = driver.find_element(By.XPATH, "/html/body/dhi-job-search/dhi-search-page-container/dhi-search-page/div/dhi-search-page-results/div/div[3]/js-search-display/div/div[3]/div[1]/js-search-pagination-container/pagination/ul/li[5]/a")
-                next_btn.click()
+                # next_btn = driver.find_element(By.XPATH, "/html/body/dhi-job-search/dhi-search-page-container/dhi-search-page/div/dhi-search-page-results/div/div[3]/js-search-display/div/div[3]/div[1]/js-search-pagination-container/pagination/ul/li[5]/a")
+                next_btn = driver.find_elements_by_class_name('page-link')
+                next_btn[-1].click()
             except NoSuchElementException:
                 pass
+            except Exception as e:
+                print(e)
+                break
     except TimeoutException:
         print('No search result found')
     except Exception as e:
@@ -176,7 +185,7 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
     loc_field.send_keys(LOCATION)
     search_btn = driver.find_element_by_id("search-button")
     search_btn.click()
-    try:
+    try: 
         data = []
         count = 0
         next_btn = True
@@ -196,21 +205,24 @@ def multi_site(driver, JOBTITLE, LOCATION, site = 'cw'):
             for job in soup.find_all('div', 'job'):
                 link_ct += 1
                 if not "ci-advert-job" in job['class']:
-                    if count >= N:
+                    if count >= N: 
                         break
                     count += 1
-                    links = driver.find_elements_by_class_name('job-title')
-                    data.append([job.find('h2').text,
-                    job.find('li', 'salary').text,
-                    job.find('li', 'job-type').span.text,
-                    job.find('li', 'date-posted').span.text.strip(),
-                    job.find('li', 'location').span.text.replace('\n', '')])
+                    try:
+                        links = driver.find_elements_by_class_name('job-title')
+                        data.append([job.find('h2').text,
+                        job.find('li', 'salary').text,
+                        job.find('li', 'location').span.text.replace('\n', ''),
+                        job.find('li', 'date-posted').span.text.strip(),
+                        job.find('li', 'job-type').span.text])
+                    except:
+                        print('Some jobs in this site have incomplete information to scrape. Skipping those...')
                     # job.find('p', 'job-intro').text])
                     try:
                         link = links[count].find_element_by_tag_name('a')
                         main_window = driver.current_window_handle
                         action = ActionChains(driver)
-
+        
                         action.key_down(Keys.CONTROL).key_down(Keys.SHIFT).click(link).key_up(Keys.CONTROL).key_up(Keys.SHIFT).perform()
 
                         driver.switch_to.window(driver.window_handles[-1])
@@ -253,18 +265,18 @@ def indeed(driver, JOBTITLE, LOCATION):
             return ''
         summary = soup.find(id='jobDescriptionText').text.strip()
         return summary
-
+    
     base_url = 'https://uk.indeed.com'
 
     type_list = ['','permanent','contract','temporary', 'parttime']
     age = {1:1,2:3,3:7,4:14,0:''}
     sal = sal_fltr*10000 if sal_fltr > 0 else ''
     url = f'https://uk.indeed.com/jobs?q={JOBTITLE}+£{sal}&l={LOCATION}&jt={type_list[jt_fltr]}&fromage={age[age_fltr]}'
-    if jt_fltr == 0:
+    if jt_fltr == 0: 
         url = url.replace('&jt=', '')
-    if age_fltr == 0:
+    if age_fltr == 0: 
         url = url.replace('&fromage=', '')
-    if sal_fltr == 0:
+    if sal_fltr == 0: 
         url = url.replace('+£','')
     print('fetching from site:', url)
     try:
@@ -282,7 +294,7 @@ def indeed(driver, JOBTITLE, LOCATION):
             link_ct = 0
             for job in soup.findAll('div', 'jobsearch-SerpJobCard'):
                 link_ct += 1
-                if count >= N:
+                if count >= N: 
                     break
                 count += 1
 
@@ -360,3 +372,4 @@ if __name__ == '__main__':
     indeed(driver, title, location)
     # Thread(target = efc("web-dev", "london")).start()
     # Thread(target = multi_site("web-dev", "london")).start()
+    driver.quit()

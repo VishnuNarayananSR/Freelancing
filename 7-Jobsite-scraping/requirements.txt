@@ -1,0 +1,8 @@
+pandas
+openpyxl
+xlrd
+requests
+bs4
+configparser
+webdriver_manager
+selenium
