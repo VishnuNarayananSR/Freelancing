@@ -6,6 +6,7 @@ import concurrent.futures
 import os
 from bs4 import BeautifulSoup
 import sys
+import time
 
 log_type = 'log+print'
 logger = None
@@ -64,7 +65,10 @@ def write_inner_table(table, writer,val, url):
 
 
 def thread_request(x):
+    global DELAY
     val, url = x
+    my_log(f'delaying for {DELAY}s...')
+    time.sleep(DELAY)
     my_log(f'Fetching {val}, {url}')
     response = requests.get(url)
     return (val, url, response)
@@ -161,12 +165,15 @@ if __name__ == '__main__':
     parser.add_argument('scraping_name', type=str, help='Parent scraping name (such as consultarpagdesporc)')
     parser.add_argument('file_stem_name', type=str, help='CSV file base name (such as 2020-08)')
     parser.add_argument('--dir', type=str, help='name to the ouput directory', default='Output')
-    parser.add_argument('--conn', type=int, help='number of concurrent connections. ideal value depends on your environment specifications', default=4)
+    parser.add_argument('--delay', type=int, help='delay between each request(in seconds)', default=0)
+    parser.add_argument('--conn', type=int, help='number of concurrent connections. ideal value depends on your environment specifications', default=1)
     args = parser.parse_args()
     scrapename = args.scraping_name
     stem = args.file_stem_name   
-    CONNECTIONS = args.conn 
     directory = args.dir
+    CONNECTIONS = args.conn 
+    global DELAY
+    DELAY = args.delay
     print(f"""
     Argument fetch successful
     name            : {scrapename}
