@@ -53,6 +53,10 @@ def get_best_tip(driver, xpath):
         except:
             mp_tip_odds = None
         soup = BeautifulSoup(driver.page_source, 'html.parser')
+        try:
+            top_tip = soup.find('table', id='tipsListingContainer').findAll('tr', 'tip-row')[0]
+        except:
+            top_tip = None
         soup = soup.find('div', 'row row-eq-height')
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
@@ -63,6 +67,44 @@ def get_best_tip(driver, xpath):
         comment = soup.find('div', 'sport-tips-table-comments-text').text.strip().encode("ascii", "ignore").decode()
     except:
         comment = None
+    
+    try:
+        best_tip_xprt_count = top_tip.find('div', 'experts-count').text.strip()
+    except:
+        best_tip_xprt_count = None
+    try:
+        form = top_tip.find('li','hr-details-placings').text.strip()
+    except:
+        form = None
+    try:
+        age = top_tip.find('li','hr-details-age').text.strip()
+    except:
+        age = None
+    try:
+        weight = top_tip.find('li','hr-details-weight').text.strip()
+    except:
+        weight = None
+    try:
+        trainer = top_tip.find('li','hr-details-trainer').text.strip()
+    except:
+        trainer = None
+    try:
+        jockey = top_tip.find('li','hr-details-jockey').text.strip()
+    except:
+        jockey = None
+    tips_dict = {}
+    try:
+        tips_dict["win"] = top_tip.findAll('td','d-none d-lg-table-cell text-center')[0].find('p', 'tips').text.split(' ')[0]
+    except:
+        tips_dict["win"] = None
+    try:
+        tips_dict["ew"] = top_tip.findAll('td','d-none d-lg-table-cell text-center')[1].find('p', 'tips').text.split(' ')[0]
+    except:
+        tips_dict["ew"] = None
+    try:
+        tips_dict["naps"] = top_tip.findAll('td','d-none d-lg-table-cell text-center')[2].find('p', 'tips').text.split(' ')[0]
+    except:
+        tips_dict["naps"] = None
     try:
         mp_tip = soup.findAll('td', 'legend-selection-name')[0].text.strip()
     except:
@@ -86,7 +128,8 @@ def get_best_tip(driver, xpath):
         best_tipsters_tip = soup.findAll('h5', 'selection-name')[1].text.strip()
     except:
         best_tipsters_tip = None
-    return((mp_tip, n_mp_tips, mp_tip_odds, total_tips, best_tipsters_tip, type_, tipster_name, odds, comment))
+    return((mp_tip, n_mp_tips, mp_tip_odds, total_tips, best_tipsters_tip, type_, tipster_name, odds, best_tip_xprt_count,
+            form, age, weight, trainer, jockey, tips_dict, comment))
 
 
 
@@ -163,7 +206,7 @@ def scrape_olbg():
         except:
             data['Value Rating'] = None
 
-        mp_tip, n_mp_tips, mp_tip_odds, total_tips, best_tipsters_tip, type_, tipster_name, odds, comment = get_best_tip(driver,xpath)
+        mp_tip, n_mp_tips, mp_tip_odds, total_tips, best_tipsters_tip, type_, tipster_name, odds, best_tip_xprt_count, form, age, weight, trainer, jockey, tips_dict, comment = get_best_tip(driver,xpath)
 
         data['Most Popular Tip'] = mp_tip
         data['Number of tips for most popular'] = n_mp_tips
@@ -174,6 +217,15 @@ def scrape_olbg():
         data['Tipster Name'] = tipster_name
         data['Odds'] = odds
         data['Comments text'] = comment
+        data['Best Tip Expert Count'] = best_tip_xprt_count
+        data['Form'] = form
+        data['Age'] = age
+        data['Weight'] = weight
+        data['Trainer'] = trainer
+        data['Jockey'] = jockey
+        data['Win Tips'] = tips_dict['win']
+        data['EW Tips'] = tips_dict['ew']
+        data['NAPS'] = tips_dict['naps']
         datas.append(data)
 
     df2 = pd.json_normalize(datas)
