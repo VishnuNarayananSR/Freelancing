@@ -139,8 +139,8 @@ def scrape_olbg():
         try:
             data['Expert Count'] = tr.find('p', attrs={'class': 'experts-count'}).text.strip()
         except:
-            data['Expert Count'] = '0 expert'
-            # continue
+            #data['Expert Count'] = '0 expert'
+            continue
             
         # try:
         #     data['Odds'] = tr.find('div', attrs={'class': 'formatted-odds'}).text.strip()
@@ -180,6 +180,7 @@ def scrape_olbg():
     df2['1st Place'] = None
     df2['2nd Place'] = None
     df2['3rd Place'] = None
+    df2['4th Place'] = None
     df2['Winning Odds'] = None
     df2['Result'] = None
     driver.quit()
@@ -235,6 +236,11 @@ def scrape_racing_post():
         except:
             data['3rd Place'] = ''
         try:
+            data['4th Place'] = div.find('li', attrs={'data-outcome-desc': '4th'}).find('span', 'rp-raceResult__horseName').text.strip()
+            data['4th Place'] = format_name(data['4th Place'].split('\n')[1].strip())
+        except:
+            data['4th Place'] = ''
+        try:
             data['Winning Odds']  = div.find('li', attrs={'data-outcome-desc': '1st'}).find('span', 'rp-raceResult__horsePrice').text.strip().replace('/','|')
         except:
             data['Winning Odds'] = None
@@ -270,6 +276,7 @@ def scrape_racing_post():
                     df2['1st Place'] = row['1st Place']
                     df2['2nd Place'] = row['2nd Place']
                     df2['3rd Place'] = row['3rd Place']
+                    df2['4th Place'] = row['4th Place']
                     df2['Winning Odds'] = row['Winning Odds']
                     sub = df2[df2['Event'].str.contains(city, na=False)]
                     sub_sub = sub[sub['Event'].str.contains(panel, na=False)]
@@ -279,20 +286,21 @@ def scrape_racing_post():
         df = pd.concat(dfs)
         for i, row in df.iterrows():
             try:
-                if row['1st Place']:
-                    if row['Best Tipsters Tip'] in row['1st Place']:
-                        df.loc[i, 'Result'] = 'WIN'
-                    elif row['Type'] == "EW" and row['Best Tipsters Tip'] in row['1st Place'] or row['Best Tipsters Tip'] in row['2nd Place'] or row['Best Tipsters Tip'] in row['3rd Place']:
-                        df.loc[i, 'Result'] = 'EW'
-                    else:
-                        df.loc[i, 'Result'] = 'LOST'
+                if row['Best Tipsters Tip'] in row['1st Place']:
+                    df.loc[i, 'Result'] = 'WIN'
+                elif row['Type'] == "EW" and row['Best Tipsters Tip'] in row['1st Place'] or row['Type'] == "EW" and row['Best Tipsters Tip'] in row['2nd Place'] or row['Type'] == "EW" and row['Best Tipsters Tip'] in row['3rd Place']or row['Type'] == "EW" and row['Best Tipsters Tip'] in row['4th Place']:
+                    df.loc[i, 'Result'] = 'WIN'
+                elif row['1st Place'] == '':
+                    df.loc[i, 'Result'] = ''
+                else:
+                    df.loc[i, 'Result'] = 'LOST'
             except:
                 data['Result'] = None
         df.to_csv(OLBG_FILENAME, mode='w', index=False, encoding='utf-8')
 
 if os.path.exists(OLBG_FILENAME):
-    print(OLBG_FILENAME, 'exists. Scrapping Racing Post...')
+    print(OLBG_FILENAME, 'exists. Scraping Racing Post...')
     scrape_racing_post()
 else:
-    print(OLBG_FILENAME, 'does not exist. Scrapping OLBG...')
+    print(OLBG_FILENAME, 'does not exist. Scraping OLBG...')
     scrape_olbg()
