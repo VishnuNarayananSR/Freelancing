@@ -54,9 +54,9 @@ def get_best_tip(driver, xpath):
             mp_tip_odds = None
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         try:
-            top_tip = soup.find('table', id='tipsListingContainer').findAll('tr', 'tip-row')[0]
+            top_tip_list = soup.find('table', id='tipsListingContainer').findAll('tr', 'tip-row')
         except:
-            top_tip = None
+            top_tip_list = None
         soup = soup.find('div', 'row row-eq-height')
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
@@ -67,7 +67,21 @@ def get_best_tip(driver, xpath):
         comment = soup.find('div', 'sport-tips-table-comments-text').text.strip().encode("ascii", "ignore").decode()
     except:
         comment = None
+    try:
+        best_tipsters_tip = soup.findAll('h5', 'selection-name')[1].text.strip()
+    except:
+        best_tipsters_tip = None
     
+    top_tip = None        
+    for tip in top_tip_list:
+        try:
+            name = tip.find('h4', 'selection-name').text.strip()
+            if best_tipsters_tip in name:
+                top_tip = tip
+                break
+        except:
+            top_tip = None
+
     try:
         best_tip_xprt_count = top_tip.find('div', 'experts-count').text.strip()
     except:
@@ -124,10 +138,6 @@ def get_best_tip(driver, xpath):
         type_ = soup.find('span', ['comment-type-label-win', 'comment-type-label-ew']).text.strip()
     except:
         type_ = None
-    try:
-        best_tipsters_tip = soup.findAll('h5', 'selection-name')[1].text.strip()
-    except:
-        best_tipsters_tip = None
     return((mp_tip, n_mp_tips, mp_tip_odds, total_tips, best_tipsters_tip, type_, tipster_name, odds, best_tip_xprt_count,
             form, age, weight, trainer, jockey, tips_dict, comment))
 
