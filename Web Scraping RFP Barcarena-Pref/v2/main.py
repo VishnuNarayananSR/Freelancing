@@ -7,6 +7,8 @@ import os
 import sys
 import shutil 
 import logging
+import pandas as pd
+from datetime import datetime
 
 log_type = 'log+print'
 logger = None
@@ -30,33 +32,26 @@ def my_log(msg, level=10):
         logger.log(level, msg)
 
 
-def write_table(table, filename, head_url, mode):
-    if os.path.exists(filename):        
-        e = Exception('this scraping seems to have been done already. Aborting overwrite.')
-        logger.error(e)
-        raise e
+def return_table_df(table, head_url):
     
-    my_log("writing to main table")
+    # my_log("writing to main table")
     
-    with open(filename, mode, encoding='utf-8') as f:
-        writer = csv.writer(f)
-        heads = table.find('tr').findAll('th')
-        heads = [head.get_text().replace('\n', "") for head in heads]
-        writer.writerow(heads)
-        for tr in table.findAll('tr')[0:]:
-            row  = []
-            cells = tr.findAll(['td'])
-            for data in cells:
-                if not data.find('a'):
-                    row.append(data.get_text().replace('\n', ""))
-                else:
-                    row.append(', '.join(list(map(lambda x:head_url + x['href'],data.findAll('a')))))
-            # for links in tr.findAll('a'):
-            #     row.append(head_url + links['href'])
-            if row:
-                writer.writerow(row)
+    table = soup.find('table')
+    heads = list(table.find('tr').stripped_strings)
+    heads = heads[:-2] + [' '.join(heads[-2:])]
+    rows = []
+    for tr in table.findAll('tr')[1:]:
+        row  = []
+        cells = tr.findAll(['td'])
+        for data in cells:
+            if not data.find('a'):
+                row.extend([i.replace("\n", "") for i in list(data.stripped_strings)])
+            else:
+                row.append(', '.join(list(map(lambda x:head_url + x['href'],data.findAll('a')))))
+        rows.append(row)
+    return pd.DataFrame(rows, columns = heads)
             
-    my_log("writing to main table successful")
+    # my_log("writing to main table successful")
 
 
 def prepare_soup(url):
@@ -92,7 +87,7 @@ def get_arguments():
     directory = args.dir
     #if not os.path.exists(directory):
     #    os.mkdir(directory)
-    name = os.path.join(directory, scrapename)
+    name = os.path.join(directory, scrapename, 'main') #, *(file_stem_names.split('/')[:-1])) #also if file_stem_names contains directories, add them
     if not os.path.exists(name):
         os.makedirs(name)
     #else:
@@ -110,17 +105,25 @@ def get_arguments():
 
     return directory, scrapename, name, file_stem_names, url, connections
 
-
-
-
+def registry_log(scrapename, name, file_stem_names, rows_source, rows_scraped):
+    if not os.path.exists(registry_file):
+        with open(registry_file, 'w') as f:
+            reg_writer = csv.writer(f)
+            reg_writer.writerow(['Timestamp', 'Category', 'Subcategory', 'Title', 'Stem' , 'No of rows(Actual)', 'No of rows scraped'])
+    timestamp = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    category = "DESPESAS GERAIS"
+    subcategory = scrapename
+    title = name.split('/')[-1]
+    stem = file_stem_names
+    with open(registry_file, 'a') as f:
+        reg_writer = csv.writer(f)
+        reg_writer.writerow([timestamp, category, subcategory, title, stem, rows_source, rows_scraped])
 
 if __name__ == '__main__':
     directory, scrapename, name, file_stem_names, url, CONNECTIONS = get_arguments()
     logging.basicConfig(filename=f'{directory}/mainscrape.log', level=logging.DEBUG, 
                         format='%(asctime)s %(levelname)s %(name)s %(message)s')
     logger=logging.getLogger(__name__)
-    
-    
     logger.log(20, f'1Starting scraper to scrape {file_stem_names} of {scrapename}')
     logger.debug(f'2Starting scraper to scrape {file_stem_names} of {scrapename}')
     my_log(f'3Starting scraper to scrape {file_stem_names} of {scrapename}')
@@ -128,10 +131,28 @@ if __name__ == '__main__':
     # name = 'test'
     # url = 'http://www.governotransparente.com.br/transparencia/4382489/consultarliqdesporc/resultado?ano=8&inicio=01%2F01%2F2021&fim=24%2F01%2F2021&orgao=-1&elem=-1&unid=-1&valormax=&valormin=&credor=-1&clean=false'
     filename = f'{name}/{file_stem_names}.csv'
-    soup = prepare_soup(url)
-    main_table = soup.find('table')
+    registry_file = 'registry.csv'
+    if os.path.exists(filename):        
+        e = Exception('this scraping seems to have been done already. Aborting overwrite.')
+        logger.error(e)
+        raise e
+    page = 1
     head_url = 'http://www.governotransparente.com.br'
-    if main_table is None:
-        my_log('No table found. Check on the link, it might have expired')
-        sys.exit()
-    write_table(main_table, filename, head_url, 'w+')
+    soup = prepare_soup(url)
+    try:
+        rows_source = soup.findAll('p')[-1].text.split()[-2]
+    except:
+        rows_source = None
+    table = soup.find('table')
+    df = return_table_df(table, head_url)
+    max_pages = soup.find('div', 'pagination').input['data-max-page']
+    while page < 6:#int(max_pages):
+        page += 1
+        print(f'scraping page{page}')
+        soup = prepare_soup(f"{url}&page={page}")
+        table = soup.find('table')
+        df = df.append(return_table_df(table, head_url), ignore_index=True)
+
+    df.to_csv(filename, index=False)
+    rows_scraped = len(df.index)
+    registry_log(scrapename, name, file_stem_names, rows_source, rows_scraped)

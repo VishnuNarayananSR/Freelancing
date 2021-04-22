@@ -132,7 +132,8 @@ def output(response_arr, column):
             title = title_arr[i].lower()
             if title in ['itemdaliquidação','itensdaliquidação']:
                 title = 'itensdanota'
-            filename = f'{directory}/{scrapename}/{column}/{title}/{stem}.csv'
+            #filename = f'{directory}/{scrapename}/{column}/{title}/{stem}.csv'
+            filename = f'{directory}/{scrapename}/{title}/{stem}.csv'
             if element.name == "table":
                 if not os.path.exists(filename):
                     create_file(filename, element, mode='table')
@@ -180,9 +181,9 @@ if __name__ == '__main__':
     file_stem_names : {stem}
     directory       : {directory}
     """)
-    filename = f'{directory}/{scrapename}/{stem}.csv'
+    filename = f'{directory}/{scrapename}/main/{stem}.csv'
     if not os.path.exists(filename):
-        print("File not found")
+        print(f"File not found: {filename}")
         sys.exit()
     logging.basicConfig(filename=f'{directory}/mainscrape.log', level=logging.DEBUG, 
                         format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -200,7 +201,7 @@ if __name__ == '__main__':
         for row in reader:
             for cell in row:
                 if 'http' in cell:
-                    links+=(cell.split(','))
+                    links+=list(map(str.strip,(cell.split(','))))
             # documento.append((heads[-2], row[-2]))
             # empenho.append((heads[-1],row[-1]))
     for link in links:
