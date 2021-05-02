@@ -11,7 +11,10 @@ def semantic_distance(keywords_file, title, body):
     kw_df = pd.read_excel(keywords_file)
     stop_words = nltk.corpus.stopwords.words('english')
     tokens_vector = []
-    for content in body.values:
+    for idx in title.index:
+        if pd.isna(title[idx]) or pd.isna(body[idx]):
+            continue
+        content = title[idx] + '\n' + body[idx]
         filtered_tokens = []
         tokens = nltk.tokenize.word_tokenize(content)
         for token in tokens:
@@ -30,6 +33,5 @@ def semantic_distance(keywords_file, title, body):
     plt.show()
 
 df = pd.read_csv("article_data.csv")
-# df.dropna(inplace = True)
 semantic_distance("keywords.xlsx", df['Title'], df['Body'])
 
