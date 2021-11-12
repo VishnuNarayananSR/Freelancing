@@ -45,7 +45,7 @@ urllib3==1.26.3
 virtualenv==20.4.2
 wcwidth==0.2.5
 zipp==3.4.0
-PyInquirer
+pyinquirer
 robotframework-jsonlibrary
 pyjsparser
 jsonpath-rw
